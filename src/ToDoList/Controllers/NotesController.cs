@@ -1,69 +1,84 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using ToDoList.Contracts;
-using ToDoList.Domain;
-using ToDoList.Services.Abstract;
+using ToDoList.Application.Applications.Handlers.Notes.Commands.CompleteNote;
+using ToDoList.Application.Applications.Handlers.Notes.Commands.Create;
+using ToDoList.Application.Applications.Handlers.Notes.Commands.Detele;
+using ToDoList.Application.Applications.Handlers.Notes.Commands.Update;
+using ToDoList.Application.Applications.Handlers.Notes.Commands.UpdateCategory;
+using ToDoList.Application.Applications.Handlers.Notes.Commands.UpdateDueDate;
+using ToDoList.Application.Applications.Handlers.Notes.Queries.GetNote;
+using ToDoList.Application.Applications.Handlers.Notes.Queries.GetNotesPaged;
+using ToDoList.Application.Conracts.Requests;
 
 namespace ToDoList.Controllers;
 
+/// <inheritdoc />
 [ApiController]
 [Route("api/[controller]")]
 [SwaggerTag("Контроллер для работы с задачами")]
-public class NotesController(INoteService noteService) : ControllerBase
+public class NotesController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Note>>> GetAllNotes()
+    public async Task<ActionResult> GetAllNotes([FromQuery] GetNotesQuery request, CancellationToken cancellationToken)
     {
-        var notes = await noteService.GetAllNotesAsync();
+        var notes =  await mediator.Send(request, cancellationToken);
         return Ok(notes);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Note>> GetNoteById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult> GetNoteById(int id, CancellationToken cancellationToken)
     {
-        var note = await noteService.GetNoteByIdAsync(id, cancellationToken);
+        var request = new GetNoteById(id);
+        var note = await mediator.Send(request, cancellationToken);
         return Ok(note);
     }
 
     [HttpPost]
     public async Task<IActionResult> AddNote([FromBody] CreateNoteRequest request , CancellationToken cancellationToken)
     {
-        await noteService.AddNoteAsync(request, cancellationToken);
+        await mediator.Send(request, cancellationToken);
         return Ok();
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateNote(int id, [FromBody] UpdateNoteRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateNote([FromRoute] int id, [FromBody] NoteData data, CancellationToken cancellationToken)
     {
-        await noteService.UpdateNoteAsync(id, request, cancellationToken);
+        var command = new UpdateNoteRequest(id, data);
+        await mediator.Send(command, cancellationToken);
         return Ok();
     }
 
     [HttpPatch("{id}/complete")]
     public async Task<IActionResult> CompleteNote(int id, CancellationToken cancellationToken)
     {
-        await noteService.CompleteNoteAsync(id, cancellationToken);
+        var command = new CompleteNoteRequest(id);
+        await mediator.Send(command, cancellationToken);
         return Ok();
     }
 
     [HttpPatch("{id}/dueDate")]
-    public async Task<IActionResult> UpdateDueDate(int id, [FromBody] UpdateDueDateRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateDueDate(int id, [FromBody] NoteDueDateData data, CancellationToken cancellationToken)
     {
-        await noteService.UpdateDueDateAsync(id, request, cancellationToken);
+        var command = new UpdateDueDateRequest(id, data);
+        await mediator.Send(command, cancellationToken);
         return Ok();
     }
 
     [HttpPatch("{id}/category")]
-    public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateCategory(int id, [FromBody] NoteCategoryData data, CancellationToken cancellationToken)
     {
-        await noteService.UpdateCategoryAsync(id, request, cancellationToken);
+        var command = new UpdateCategoryRequest(id, data);
+        await mediator.Send(command, cancellationToken);
         return Ok();
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteNote(int id, CancellationToken cancellationToken)
     {
-        await noteService.DeleteNoteAsync(id, cancellationToken);
+        var command = new DeleteNoteRequest(id);
+        await mediator.Send(command, cancellationToken);
         return Ok();
     }
 }
+

@@ -1,0 +1,30 @@
+﻿services:
+  todolist:
+    image: todolist
+    build:
+      context: .
+      dockerfile: ToDoList/Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_HTTP_PORTS=5001
+    depends_on:
+      - postgres
+      
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    restart: on-failure
+    environment:
+      POSTGRES_DB: todolist
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+      DB_PORT: 5432
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
